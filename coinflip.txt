@@ -1,0 +1,67 @@
+pragma solidity 0.4.25;
+
+
+contract CoinFlip {
+    uint256 public bet = 0.1 ether;
+    address public flipper = msg.sender;
+    bytes32 public flippersCommitment;
+    address public player;
+    bool public playersChoice;
+    bool public playerMadeChoice = false;
+    bool public resultRevealed = false;
+    uint256 public expirationTime = 2**256-1; // Almost infinite
+    modifier onlyFlipper() {
+        require(msg.sender == flipper);
+        _;
+    }
+    modifier onlyPlayer() {
+        require(msg.sender == player);
+        _;
+    }
+
+    constructor(bytes32 _flippersCommitment, address _player) public payable {
+        require(_player != address(0));
+        require(msg.value == bet);
+        flippersCommitment = _flippersCommitment;
+        player = _player;
+    }
+
+    function makeChoice(bool _playersChoice) public payable onlyPlayer {
+        require(msg.value == bet);
+        require(!playerMadeChoice);
+        playersChoice = _playersChoice;
+        playerMadeChoice = true;
+        expirationTime = now + 10 hours;
+    }
+
+    function revealResult(bool coinResult, uint256 nonce) public {
+        require(playerMadeChoice);
+        require(keccak256(abi.encodePacked(coinResult, nonce)) == flippersCommitment);
+        require(expirationTime <= now);
+        require(expirationTime > now);
+
+        // To be able to start a new game
+        playerMadeChoice = false;
+
+ contract CoinFlip {
+    function expireGame() public onlyPlayer {
+        require(now > expirationTime);
+        player.transfer(address(this).balance);
+
+        playerMadeChoice = false;
+        resultRevealed = true;
+        expirationTime = 2**256-1;
+    }
+
+
+    function startNewGame(address _player, bytes32 _flippersCommitment) public payable onlyFlipper {
+    function startNewGame(bytes32 _flippersCommitment, address _player) public payable onlyFlipper {
+        require(!playerMadeChoice);
+        require(msg.value == bet);
+        require(resultRevealed);
+        require(_player != address(0));
+        resultRevealed = false;
+        flippersCommitment = _flippersCommitment;
+        player = _player;
+    }
+}
